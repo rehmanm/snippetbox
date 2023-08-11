@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/rehmanm/snippetbox/internal/models"
 )
 
@@ -29,7 +30,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil || id < 0 {
 		app.notFound(w)
 		return
@@ -51,6 +53,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display the form for creating a new snippet..."))
+}
+
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
