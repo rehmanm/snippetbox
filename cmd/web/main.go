@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rehmanm/snippetbox/internal/models"
 )
@@ -17,6 +18,7 @@ type application struct {
 	infoLog       *log.Logger
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecorder  *form.Decoder
 }
 
 func main() {
@@ -49,6 +51,7 @@ func main() {
 
 	templateCache, err := newTemplateCache()
 
+	formDecorder := form.NewDecoder()
 	// Initialize a new instance of our application struct, containing the
 	// dependencies.
 	app := &application{
@@ -56,6 +59,7 @@ func main() {
 		infoLog:       infoLog,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecorder:  formDecorder,
 	}
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
