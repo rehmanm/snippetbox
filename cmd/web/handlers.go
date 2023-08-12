@@ -8,6 +8,8 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rehmanm/snippetbox/internal/models"
+	"github.com/rehmanm/snippetbox/internal/validator"
+	validator "github.com/rehmanm/snippetbox/internal/validators"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +55,19 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display the form for creating a new snippet..."))
+	data := app.newTemplateData(r)
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
+	app.render(w, http.StatusOK, "create.tmpl", data)
+}
+
+type snippetCreateForm struct {
+	Title       string
+	Content     string
+	Expires     int
+	FieldErrors map[string]string
+	validator.Validator
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -64,9 +78,38 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	title := "0 snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := 7
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form := snippetCreateForm{
+		Title:   title,
+		Content: content,
+		Expires: expires,
+	}
+
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field can't be blank")
+	form.CheckField(validator.MaxChars(form.Title), "title", "This field can't exceed more than 100 characters")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field can't be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
+
+	app.infoLog.Printf("form.FieldErrors: %s '%s', '%s', '%d'", form.FieldErrors, title, content, expires)
+	if len(form.FieldErrors) > 0 {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)
+		return
+	}
 
 	id, err := app.snippets.Insert(title, content, expires)
 
@@ -74,5 +117,5 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		app.serverError(w, err)
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
