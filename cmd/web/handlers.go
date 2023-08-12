@@ -9,7 +9,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/rehmanm/snippetbox/internal/models"
 	"github.com/rehmanm/snippetbox/internal/validator"
-	validator "github.com/rehmanm/snippetbox/internal/validators"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -63,10 +62,9 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 type snippetCreateForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
+	Title   string
+	Content string
+	Expires int
 	validator.Validator
 }
 
@@ -99,12 +97,12 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	}
 
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field can't be blank")
-	form.CheckField(validator.MaxChars(form.Title), "title", "This field can't exceed more than 100 characters")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field can't exceed more than 100 characters")
 	form.CheckField(validator.NotBlank(form.Content), "content", "This field can't be blank")
 	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
 	app.infoLog.Printf("form.FieldErrors: %s '%s', '%s', '%d'", form.FieldErrors, title, content, expires)
-	if len(form.FieldErrors) > 0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)
