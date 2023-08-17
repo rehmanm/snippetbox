@@ -11,6 +11,7 @@
 
         {{ if .IsAuthenticated }}
             <form method="POST" action="/user/logout">
+                <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
                 <button>Logout</button>
             </form>
         {{else }}
