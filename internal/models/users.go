@@ -27,7 +27,7 @@ type UserModelInterface interface {
 	Authenticate(email, password string) (int, error)
 	Exists(id int) (bool, error)
 	Get(id int) (*User, error)
-	PasswordUpdate(id int, currentPassword, newPassword string)
+	PasswordUpdate(id int, currentPassword, newPassword string) error
 }
 
 func (m *UserModel) Insert(name, email, password string) error {

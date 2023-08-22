@@ -165,7 +165,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please log in.")
-	http.Redirect(w, r, fmt.Sprintf("/user/login"), http.StatusSeeOther)
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
 type userLoginForm struct {
